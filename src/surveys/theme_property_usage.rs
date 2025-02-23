@@ -72,9 +72,9 @@ impl Survey for ThemePropertyUsage {
             let mut themes_entries = fs::read_dir(&themes_dir).await?;
             while let Some(entry) = themes_entries.next_entry().await? {
                 let theme_path = entry.path();
-                if !theme_path
+                if theme_path
                     .extension()
-                    .map_or(false, |extension| extension == "json")
+                    .is_none_or(|extension| extension != "json")
                 {
                     continue;
                 }

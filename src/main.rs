@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
             fs::create_dir_all(&work_dir).await?;
 
             tokio::process::Command::new("git")
-                .args(["clone", "--recurse-submodules", &extension_repository_url])
+                .args(["clone", "--recurse-submodules", extension_repository_url])
                 .arg(&work_dir)
                 .spawn()?
                 .wait()

@@ -1,43 +1,19 @@
+mod cli;
 mod extensions;
+mod survey;
 mod surveys;
 
 use std::path::PathBuf;
 
 use anyhow::{Context as _, Result};
-use clap::{Args, Parser, Subcommand};
-use surveys::ThemesUsingProperty;
+
+use clap::Parser as _;
 use tokio::fs;
 
+use crate::cli::{Cli, SurveyCommand};
 use crate::extensions::ExtensionsToml;
-
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    #[clap(subcommand)]
-    command: Command,
-}
-
-#[derive(Debug, Subcommand)]
-enum Command {
-    /// Runs a survey.
-    Survey(SurveyArgs),
-    /// Updates the extensions repository with the latest changes.
-    UpdateRepo,
-}
-
-#[derive(Debug, Args)]
-struct SurveyArgs {
-    #[command(subcommand)]
-    command: SurveyCommand,
-}
-
-#[derive(Debug, Subcommand)]
-enum SurveyCommand {
-    ThemeProperty {
-        /// The name of the theme property to survey.
-        name: String,
-    },
-}
+use crate::survey::Survey as _;
+use crate::surveys::ThemePropertyUsage;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -47,19 +23,19 @@ async fn main() -> Result<()> {
     let work_dir = PathBuf::from("work");
 
     match cli.command {
-        Command::Survey(survey) => {
+        cli::Command::Survey(survey) => {
             let extensions_toml = ExtensionsToml::load(&work_dir).await?;
 
             match survey.command {
                 SurveyCommand::ThemeProperty { name } => {
-                    let survey = ThemesUsingProperty::new(name);
+                    let survey = ThemePropertyUsage::new(name);
                     survey.run(&work_dir, &extensions_toml).await?;
 
                     Ok(())
                 }
             }
         }
-        Command::UpdateRepo => {
+        cli::Command::UpdateRepo => {
             fs::create_dir_all(&work_dir).await?;
 
             tokio::process::Command::new("git")

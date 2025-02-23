@@ -39,3 +39,19 @@ impl ExtensionEntry {
         extension_dir
     }
 }
+
+#[derive(Debug, Deserialize)]
+pub struct ExtensionManifest {
+    pub repository: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ThemeFamily {
+    pub themes: Vec<Theme>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Theme {
+    pub name: String,
+    pub style: BTreeMap<String, serde_json::Value>,
+}

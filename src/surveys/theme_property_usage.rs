@@ -1,11 +1,11 @@
 use std::io::Write;
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use tokio::fs;
-use url::Url;
 
 use crate::extensions::{ExtensionManifest, ExtensionsToml, ThemeFamily};
+use crate::github;
 use crate::survey::Survey;
 
 pub struct ThemePropertyUsage {
@@ -109,17 +109,7 @@ impl Survey for ThemePropertyUsage {
             write_extension_header(&mut report, extension_id, &extension_manifest)?;
 
             if let Some(repository) = &extension_manifest.repository {
-                let mut github_issue_url = Url::parse(repository)?;
-                github_issue_url
-                    .path_segments_mut()
-                    .map_err(|_| anyhow!("invalid repository URL"))?
-                    .extend(["issues", "new"]);
-                let mut query = github_issue_url.query_pairs_mut();
-                query.append_pair(
-                    "title",
-                    &format!("Deprecated `{}` usage", self.theme_property),
-                );
-
+                let title = format!("Deprecated `{}` usage", self.theme_property);
                 let mut issue_body = String::new();
                 issue_body.push_str("This extension has been identified as using the deprecated `scrollbar_thumb.background` style property.\n\n");
                 issue_body.push_str("This property has been deprecated in favor of `scrollbar.thumb.background`. Please migrate to using the new property.\n\n");
@@ -132,10 +122,8 @@ impl Survey for ThemePropertyUsage {
                     ));
                 }
 
-                query.append_pair("body", &issue_body);
-
-                query.finish();
-                drop(query);
+                let github_issue_url =
+                    github::create_github_issue_url(repository, &title, &issue_body)?;
 
                 writeln!(&mut report, "    - [Create Issue]({github_issue_url})")?;
             }

@@ -28,4 +28,6 @@ pub enum SurveyCommand {
         /// The name of the theme property to survey.
         name: String,
     },
+    /// A survey to find extensions still using the legacy `extension.json` manifest format.
+    ExtensionJson,
 }

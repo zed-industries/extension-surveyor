@@ -29,4 +29,13 @@ pub struct ExtensionEntry {
     pub path: Option<String>,
 }
 
-impl ExtensionEntry {}
+impl ExtensionEntry {
+    /// Returns the path to the extension directory for this [`ExtensionEntry`].
+    pub fn extension_dir(&self, root_dir: &Path) -> PathBuf {
+        let mut extension_dir = PathBuf::from(root_dir);
+        extension_dir.push(&self.submodule);
+        extension_dir.extend(self.path.as_ref());
+
+        extension_dir
+    }
+}

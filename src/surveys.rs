@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 use serde::Deserialize;
@@ -24,11 +24,7 @@ impl ThemesUsingProperty {
         let work_dir = work_dir.as_ref();
 
         for (extension_id, extension) in &extensions_toml.extensions {
-            let mut extension_dir = PathBuf::from(work_dir);
-            extension_dir.push(&extension.submodule);
-            extension_dir.extend(extension.path.as_ref());
-
-            let mut themes_dir = extension_dir.clone();
+            let mut themes_dir = extension.extension_dir(work_dir);
             themes_dir.push("themes");
 
             if !fs::try_exists(&themes_dir).await? {

@@ -1,0 +1,10 @@
+[package]
+name = "extension-surveyor"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0.96"
+clap = { version = "4.5.30", features = ["derive"] }
+tokio = { version = "1.43.0", features = ["full"] }

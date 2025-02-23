@@ -23,6 +23,7 @@ pub struct SurveyArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum SurveyCommand {
+    /// A survey to find extensions using a particular theme property.
     ThemeProperty {
         /// The name of the theme property to survey.
         name: String,

@@ -2,9 +2,10 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use tokio::fs;
+use url::Url;
 
 use crate::extensions::ExtensionsToml;
 
@@ -61,7 +62,6 @@ impl ThemesUsingProperty {
                 }
 
                 writeln!(report, "  - Issue: TBD")?;
-                writeln!(report, "  - Errors:")?;
 
                 Ok(())
             }
@@ -84,6 +84,7 @@ impl ThemesUsingProperty {
                     Ok(theme) => theme,
                     Err(err) => {
                         write_extension_header(&mut report, extension_id, &extension_manifest)?;
+                        writeln!(report, "  - Errors:")?;
                         writeln!(
                             &mut report,
                             "    - Failed to parse theme file at {theme_path:?}: {err}"
@@ -96,21 +97,56 @@ impl ThemesUsingProperty {
                 themes.extend(theme.themes);
             }
 
-            let mut wrote_header = false;
+            let themes_using_property = themes
+                .into_iter()
+                .filter(|theme| theme.style.contains_key(&self.theme_property))
+                .collect::<Vec<_>>();
+            if themes_using_property.is_empty() {
+                continue;
+            }
 
-            for theme in themes {
-                if theme.style.contains_key(&self.theme_property) {
-                    if !wrote_header {
-                        write_extension_header(&mut report, extension_id, &extension_manifest)?;
-                        wrote_header = true;
-                    }
+            write_extension_header(&mut report, extension_id, &extension_manifest)?;
 
-                    writeln!(
-                        &mut report,
-                        "    - Theme {:?} is using deprecated style property `{}`",
+            if let Some(repository) = &extension_manifest.repository {
+                let mut github_issue_url = Url::parse(repository)?;
+                github_issue_url
+                    .path_segments_mut()
+                    .map_err(|_| anyhow!("invalid repository URL"))?
+                    .extend(["issues", "new"]);
+                let mut query = github_issue_url.query_pairs_mut();
+                query.append_pair(
+                    "title",
+                    &format!("Deprecated `{}` usage", self.theme_property),
+                );
+
+                let mut issue_body = String::new();
+                issue_body.push_str("This extension has been identified as using the deprecated `scrollbar_thumb.background` style property.\n\n");
+                issue_body.push_str("This property has been deprecated in favor of `scrollbar.thumb.background`. Please migrate to using the new property.\n\n");
+                issue_body.push_str("The following themes are impacted:\n\n");
+
+                for theme in &themes_using_property {
+                    issue_body.push_str(&format!(
+                        "- Theme {:?} is using deprecated style property `{}`\n",
                         theme.name, self.theme_property
-                    )?;
+                    ));
                 }
+
+                query.append_pair("body", &issue_body);
+
+                query.finish();
+                drop(query);
+
+                writeln!(&mut report, "    - [Create Issue]({github_issue_url})")?;
+            }
+
+            writeln!(&mut report, "  - Errors:")?;
+
+            for theme in &themes_using_property {
+                writeln!(
+                    &mut report,
+                    "    - Theme {:?} is using deprecated style property `{}`",
+                    theme.name, self.theme_property
+                )?;
             }
         }
 

@@ -42,8 +42,6 @@ async fn main() -> Result<()> {
             }
         }
         cli::Command::UpdateRepo => {
-            fs::create_dir_all(&work_dir).await?;
-
             if work_dir.exists() {
                 tokio::process::Command::new("git")
                     .args(["pull", "--recurse-submodules"])
@@ -53,6 +51,8 @@ async fn main() -> Result<()> {
                     .await
                     .context("failed to pull extensions repository")?;
             } else {
+                fs::create_dir_all(&work_dir).await?;
+
                 tokio::process::Command::new("git")
                     .args(["clone", "--recurse-submodules", extension_repository_url])
                     .arg(&work_dir)

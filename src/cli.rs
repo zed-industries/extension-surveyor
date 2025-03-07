@@ -30,4 +30,6 @@ pub enum SurveyCommand {
     },
     /// A survey to find extensions still using the legacy `extension.json` manifest format.
     ExtensionJson,
+    /// A survey to find which Tree-sitter grammars are in use across extensions.
+    TreeSitterGrammars,
 }

@@ -13,7 +13,7 @@ use tokio::fs;
 use crate::cli::{Cli, SurveyCommand};
 use crate::extensions::ExtensionsToml;
 use crate::survey::Survey as _;
-use crate::surveys::{ExtensionJsonUsage, ThemePropertyUsage};
+use crate::surveys::{ExtensionJsonUsage, ThemePropertyUsage, TreeSitterGrammars};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -35,6 +35,12 @@ async fn main() -> Result<()> {
                 }
                 SurveyCommand::ExtensionJson => {
                     let survey = ExtensionJsonUsage;
+                    survey.run(&work_dir, &extensions_toml).await?;
+
+                    Ok(())
+                }
+                SurveyCommand::TreeSitterGrammars => {
+                    let survey = TreeSitterGrammars;
                     survey.run(&work_dir, &extensions_toml).await?;
 
                     Ok(())

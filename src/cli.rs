@@ -26,7 +26,7 @@ pub enum SurveyCommand {
     /// A survey to find extensions using a particular theme property.
     ThemeProperty {
         /// The name of the theme property to survey.
-        name: String,
+        name: Vec<String>,
     },
     /// A survey to find extensions still using the legacy `extension.json` manifest format.
     ExtensionJson,

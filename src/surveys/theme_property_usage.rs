@@ -3,18 +3,28 @@ use std::path::Path;
 
 use anyhow::Result;
 use tokio::fs;
+use tokio::io::AsyncReadExt;
 
 use crate::extensions::{ExtensionManifest, ExtensionsToml, ThemeFamily};
 use crate::github;
 use crate::survey::Survey;
 
 pub struct ThemePropertyUsage {
-    theme_property: String,
+    theme_property: Vec<String>,
 }
 
 impl ThemePropertyUsage {
-    pub fn new(theme_property: String) -> Self {
+    pub fn new(theme_property: Vec<String>) -> Self {
         Self { theme_property }
+    }
+
+    pub fn property_name(&self) -> String {
+        self.theme_property
+            .iter()
+            .map(|property| format!("`{property}`"))
+            .rev()
+            .collect::<Vec<String>>()
+            .join(" in section ")
     }
 }
 
@@ -26,6 +36,8 @@ impl Survey for ThemePropertyUsage {
     ) -> Result<()> {
         let work_dir = work_dir.as_ref();
         let mut report = Vec::new();
+
+        let property_iterator = self.theme_property.iter();
 
         for (extension_id, extension) in &extensions_toml.extensions {
             let mut themes_dir = extension.extension_dir(work_dir);
@@ -79,9 +91,12 @@ impl Survey for ThemePropertyUsage {
                     continue;
                 }
 
-                let theme = match serde_json_lenient::from_reader::<_, ThemeFamily>(
-                    std::fs::File::open(&theme_path)?,
-                ) {
+                let mut buf = String::new();
+                fs::File::open(&theme_path)
+                    .await?
+                    .read_to_string(&mut buf)
+                    .await?;
+                let theme = match serde_json_lenient::from_str_lenient::<ThemeFamily>(&buf) {
                     Ok(theme) => theme,
                     Err(err) => {
                         write_extension_header(&mut report, extension_id, &extension_manifest)?;
@@ -100,7 +115,14 @@ impl Survey for ThemePropertyUsage {
 
             let themes_using_property = themes
                 .into_iter()
-                .filter(|theme| theme.style.contains_key(&self.theme_property))
+                .filter(|theme| {
+                    property_iterator
+                        .clone()
+                        .fold(Some(&theme.style), |style, key| {
+                            style.and_then(|s| s.as_object().and_then(|obj| obj.get(key)))
+                        })
+                        .is_some()
+                })
                 .collect::<Vec<_>>();
             if themes_using_property.is_empty() {
                 continue;
@@ -109,7 +131,7 @@ impl Survey for ThemePropertyUsage {
             write_extension_header(&mut report, extension_id, &extension_manifest)?;
 
             if let Some(repository) = &extension_manifest.repository {
-                let title = format!("Deprecated `{}` usage", self.theme_property);
+                let title = format!("Deprecated `{}` usage", self.property_name());
                 let mut issue_body = String::new();
                 issue_body.push_str("This extension has been identified as using the deprecated `scrollbar_thumb.background` style property.\n\n");
                 issue_body.push_str("This property has been deprecated in favor of `scrollbar.thumb.background`. Please migrate to using the new property.\n\n");
@@ -117,8 +139,9 @@ impl Survey for ThemePropertyUsage {
 
                 for theme in &themes_using_property {
                     issue_body.push_str(&format!(
-                        "- Theme {:?} is using deprecated style property `{}`\n",
-                        theme.name, self.theme_property
+                        "- Theme {:?} is using deprecated style property {}\n",
+                        theme.name,
+                        self.property_name()
                     ));
                 }
 
@@ -133,8 +156,9 @@ impl Survey for ThemePropertyUsage {
             for theme in &themes_using_property {
                 writeln!(
                     &mut report,
-                    "    - Theme {:?} is using deprecated style property `{}`",
-                    theme.name, self.theme_property
+                    "    - Theme {:?} is using deprecated style property {}",
+                    theme.name,
+                    self.property_name()
                 )?;
             }
         }

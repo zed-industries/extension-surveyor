@@ -1,9 +1,9 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::io::Write;
 
-use serde::{Deserialize, Serialize};
 use tokio::fs;
 
+use crate::extension::ExtensionManifest;
 use crate::survey::Survey;
 
 pub struct TreeSitterGrammars;
@@ -74,23 +74,4 @@ impl Survey for TreeSitterGrammars {
 
         Ok(())
     }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct ExtensionManifest {
-    pub id: String,
-    pub name: String,
-    pub version: String,
-
-    #[serde(default)]
-    pub grammars: BTreeMap<String, GrammarManifestEntry>,
-}
-
-#[derive(Clone, Default, PartialEq, Eq, Debug, Deserialize, Serialize)]
-pub struct GrammarManifestEntry {
-    pub repository: String,
-    #[serde(alias = "commit")]
-    pub rev: String,
-    #[serde(default)]
-    pub path: Option<String>,
 }

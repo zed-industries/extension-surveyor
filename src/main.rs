@@ -1,4 +1,5 @@
 mod cli;
+mod extension;
 mod extensions;
 mod github;
 mod survey;

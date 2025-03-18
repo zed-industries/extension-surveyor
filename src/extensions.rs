@@ -41,11 +41,6 @@ impl ExtensionEntry {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ExtensionManifest {
-    pub repository: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct ThemeFamily {
     pub themes: Vec<Theme>,
 }

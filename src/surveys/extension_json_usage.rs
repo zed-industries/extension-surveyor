@@ -4,7 +4,8 @@ use std::path::Path;
 use anyhow::Result;
 use tokio::fs;
 
-use crate::extensions::{ExtensionManifest, ExtensionsToml};
+use crate::extension::ExtensionManifest;
+use crate::extensions::ExtensionsToml;
 use crate::github;
 use crate::survey::Survey;
 

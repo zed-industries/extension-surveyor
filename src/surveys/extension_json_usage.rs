@@ -1,13 +1,18 @@
 use std::io::Write;
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{Context as _, Result};
+use serde::Deserialize;
 use tokio::fs;
 
-use crate::extension::ExtensionManifest;
 use crate::extensions::ExtensionsToml;
 use crate::github;
 use crate::survey::Survey;
+
+#[derive(Debug, Deserialize)]
+struct MinimalExtensionManifest {
+    pub repository: Option<String>,
+}
 
 pub struct ExtensionJsonUsage;
 
@@ -28,8 +33,9 @@ impl Survey for ExtensionJsonUsage {
                 continue;
             }
 
-            let extension_manifest: ExtensionManifest =
-                serde_json_lenient::from_str(&fs::read_to_string(&extension_json_path).await?)?;
+            let extension_manifest: MinimalExtensionManifest =
+                serde_json_lenient::from_str(&fs::read_to_string(&extension_json_path).await?)
+                    .with_context(|| format!("failed to read manifest for {extension_id}"))?;
 
             writeln!(report, "- [ ] `{extension_id}`")?;
             if let Some(repository) = extension_manifest.repository.as_ref() {

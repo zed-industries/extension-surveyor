@@ -48,5 +48,5 @@ pub struct ThemeFamily {
 #[derive(Debug, Deserialize)]
 pub struct Theme {
     pub name: String,
-    pub style: BTreeMap<String, serde_json::Value>,
+    pub style: serde_json::Value,
 }

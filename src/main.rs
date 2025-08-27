@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
         cli::Command::UpdateRepo => {
             if work_dir.exists() {
                 tokio::process::Command::new("git")
-                    .args(["pull", "--recurse-submodules"])
+                    .args(["pull", "--recurse-submodules", "--jobs=50"])
                     .current_dir(&work_dir)
                     .spawn()?
                     .wait()
@@ -61,7 +61,12 @@ async fn main() -> Result<()> {
                 fs::create_dir_all(&work_dir).await?;
 
                 tokio::process::Command::new("git")
-                    .args(["clone", "--recurse-submodules", extension_repository_url])
+                    .args([
+                        "clone",
+                        "--recurse-submodules",
+                        extension_repository_url,
+                        "--jobs=50",
+                    ])
                     .arg(&work_dir)
                     .spawn()?
                     .wait()
